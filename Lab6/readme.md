@@ -25,7 +25,12 @@
 ### Приклад використання
 
 Запуск файлу напряму покаже приклади множення байтів:
+
 python galua.py
+
+### Результат виконання для (D4 * 02 та BF * 03 = DA)
+
+![image](https://github.com/user-attachments/assets/a1f1dc6a-7742-4c21-b6ed-2eee0f2b3b9f)
 
 # Lab 6/byte_multiplication.py
 
@@ -61,4 +66,9 @@ python galua.py
 ## Приклад використання
 
 Файл також містить тестовий приклад для множення поліномів:
+
 python byte_multiplication.py
+
+### Результат виконання для (57*83) ((x^6 + x^4 + x^2 + x + 1) * (x^7 + x + 1))
+
+![image](https://github.com/user-attachments/assets/b1ddb7c0-3626-4438-b01f-b2867d9d866e)
