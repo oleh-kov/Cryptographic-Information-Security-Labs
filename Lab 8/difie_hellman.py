@@ -52,18 +52,17 @@ def diffie_hellman_key_exchange(bits=512):
 
     # Спільний секрет
     shared_secret_alice = pow(B, a, p)
-    print(f"Спільний секрет Аліси (Alice): {shared_secret_alice}\n\n")
-
     shared_secret_bob = pow(A, b, p)
-    print(f"Спільний секрет Боба (Bob): {shared_secret_bob}\n\n")
 
     assert shared_secret_alice == shared_secret_bob, "Неудача! Спільний секрет не співпадає!"
+    print(f"Спільний секрет Аліси: {shared_secret_alice}\n\n")
+    print(f"Спільний секрет Боба: {shared_secret_alice}")
     return shared_secret_alice
 
 # Тестимо
 def test_diffie_hellman():
     shared_secret = diffie_hellman_key_exchange()
-    print("Спільний секрет:", shared_secret)
+    #print("Спільний секрет:", shared_secret)
 
 if __name__ == "__main__":
     test_diffie_hellman()
