@@ -254,5 +254,5 @@ print("Розширений ключ:  ", format_expanded_key_blocks(round_key
 print("Зашифрований текст:  ", format_hex_blocks(ciphertext))
 print("Розшифрований текст:  ", format_hex_blocks(decrypted), "\n\n\n")
 
-round_keys = key_expansion(key)
-print_round_keys(round_keys)
+#round_keys = key_expansion(key)
+#print_round_keys(round_keys)
