@@ -93,7 +93,6 @@ def mix_columns(state):
             gmul(col[0], MIX_COLUMNS_MATRIX[2][0]) ^ gmul(col[1], MIX_COLUMNS_MATRIX[2][1]) ^ gmul(col[2], MIX_COLUMNS_MATRIX[2][2]) ^ gmul(col[3], MIX_COLUMNS_MATRIX[2][3]),
             gmul(col[0], MIX_COLUMNS_MATRIX[3][0]) ^ gmul(col[1], MIX_COLUMNS_MATRIX[3][1]) ^ gmul(col[2], MIX_COLUMNS_MATRIX[3][2]) ^ gmul(col[3], MIX_COLUMNS_MATRIX[3][3])
         ]
-        # Place the new column back into the state
         for j in range(4):
             state[j][i] = new_col[j]
         #print(f"new_col = {[hex(x) for x in new_col]}")
@@ -101,16 +100,13 @@ def mix_columns(state):
 def inv_mix_columns(state):
     """Обернене змішування стовпців матриці стану."""
     for i in range(4):
-        # Extract the column
         col = [state[j][i] for j in range(4)]
-        # Perform the Inverse Mix Columns operation on the column
         new_col = [
             gmul(col[0], INV_MIX_COLUMNS_MATRIX[0][0]) ^ gmul(col[1], INV_MIX_COLUMNS_MATRIX[0][1]) ^ gmul(col[2], INV_MIX_COLUMNS_MATRIX[0][2]) ^ gmul(col[3], INV_MIX_COLUMNS_MATRIX[0][3]),
             gmul(col[0], INV_MIX_COLUMNS_MATRIX[1][0]) ^ gmul(col[1], INV_MIX_COLUMNS_MATRIX[1][1]) ^ gmul(col[2], INV_MIX_COLUMNS_MATRIX[1][2]) ^ gmul(col[3], INV_MIX_COLUMNS_MATRIX[1][3]),
             gmul(col[0], INV_MIX_COLUMNS_MATRIX[2][0]) ^ gmul(col[1], INV_MIX_COLUMNS_MATRIX[2][1]) ^ gmul(col[2], INV_MIX_COLUMNS_MATRIX[2][2]) ^ gmul(col[3], INV_MIX_COLUMNS_MATRIX[2][3]),
             gmul(col[0], INV_MIX_COLUMNS_MATRIX[3][0]) ^ gmul(col[1], INV_MIX_COLUMNS_MATRIX[3][1]) ^ gmul(col[2], INV_MIX_COLUMNS_MATRIX[3][2]) ^ gmul(col[3], INV_MIX_COLUMNS_MATRIX[3][3])
         ]
-        # Place the new column back into the state
         for j in range(4):
             state[j][i] = new_col[j]
 
@@ -128,71 +124,74 @@ def gmul(a, b):
     return p
 
 def add_round_key(state, round_key):
-    """Додає раундовий ключ до стану."""
-    print("Round Key:")
-    for row in round_key:
-        print([hex(x) for x in row])
-    print("State before AddRoundKey:")
-    for row in state:
-        print([hex(x) for x in row])
+    """Підмішуємо раундовий ключ"""
     for i in range(4):
         for j in range(4):
             state[i][j] ^= round_key[i][j]
-    print("State after AddRoundKey:")
-    for row in state:
-        print([hex(x) for x in row])
 
 def key_expansion(key):
-    """Розшиює 128-бітний ключ на раундові ключі."""
+    """Процес розгортання ключа"""
     expanded_keys = [list(key[i:i+4]) for i in range(0, len(key), 4)]
+    
     for i in range(4, 44):
         temp = expanded_keys[i - 1]
         if i % 4 == 0:
-            #print(f"Before Rotation and Substitution: {[hex(b) for b in temp]}")
-            temp = [s_box[b] for b in temp[1:] + temp[:1]]
-            #print(f"After Substitution: {[hex(b) for b in temp]}")
-            temp[0] ^= RCon[i // 4 - 1]
-            #print(f"After RCon XOR: {[hex(b) for b in temp]}")
+            temp = temp[1:] + temp[:1]
+            temp = [s_box[b] for b in temp]
+            temp[0] ^= RCon[(i // 4) - 1]
         expanded_keys.append([expanded_keys[i - 4][j] ^ temp[j] for j in range(4)])
-        #print(f"New Word: {[hex(b) for b in expanded_keys[-1]]}")
-    return [expanded_keys[i:i+4] for i in range(0, len(expanded_keys), 4)]
+    
+    round_keys = [expanded_keys[i:i+4] for i in range(0, len(expanded_keys), 4)]
+    return round_keys
+
+def transpose(matrix):
+    """Транспонуємо матрицю 4х4."""
+    return [list(row) for row in zip(*matrix)]
+
+def print_round_keys(round_keys):
+    for round_num, key in enumerate(round_keys):
+        print(f"Round {round_num} Key:")
+        transposed_key = transpose(key)
+        for row in transposed_key:
+            print(' '.join(f'{byte:02x}' for byte in row))
+        print()
 
 def format_state_hex(state):
     """Форматує стан у шістнадцятковий рядок."""
     return '\n'.join(' '.join(f'{byte:02x}' for byte in row) for row in state)
 
 def aes_encrypt_block(plaintext, key):
-    """Зашифруємо блок AES-128."""
-    state = [list(plaintext[i:i+4]) for i in range(0, len(plaintext), 4)]
+    """Шифруємо текст згідно з AES-128."""
+    state = convert_to_column_major(plaintext)
     round_keys = key_expansion(key)
+    round_keys = [transpose(key) for key in round_keys]
+
     print("Initial State:\n", format_state_hex(state))
     add_round_key(state, round_keys[0])
     print("After AddRoundKey (Round 0):\n", format_state_hex(state))
     for i in range(1, 10):
-        #print(f"State before SubBytes (Round {i}):\n", format_state_hex(state))
         sub_bytes(state)
         print(f"After SubBytes (Round {i}):\n", format_state_hex(state))
-        #print(f"State before ShiftRows (Round {i}):\n", format_state_hex(state))
         shift_rows(state)
         print(f"After ShiftRows (Round {i}):\n", format_state_hex(state))
-        #print("State before MixColumns:\n", format_state_hex(state))
         mix_columns(state)
         print(f"After MixColumns (Round {i}):\n", format_state_hex(state))
         add_round_key(state, round_keys[i])
         print(f"After AddRoundKey (Round {i}):\n", format_state_hex(state))
     sub_bytes(state)
     print("After SubBytes (Round 10):\n", format_state_hex(state))
-    print("State before ShiftRows (Round 10):\n", format_state_hex(state))
     shift_rows(state)
     print("After ShiftRows (Round 10):\n", format_state_hex(state))
     add_round_key(state, round_keys[10])
     print("After AddRoundKey (Round 10):\n", format_state_hex(state))
-    return [byte for row in state for byte in row], round_keys
+    return convert_to_row_major(state), round_keys
 
 def aes_decrypt_block(ciphertext, key):
-    """Розшифровуємо блок AES-128."""
-    state = [list(ciphertext[i:i+4]) for i in range(0, len(ciphertext), 4)]
+    """Дешифруємо текст згідно з AES-128."""
+    state = convert_to_column_major(ciphertext)
     round_keys = key_expansion(key)
+    round_keys = [transpose(key) for key in round_keys]
+
     add_round_key(state, round_keys[10])
     for i in range(9, 0, -1):
         inv_shift_rows(state)
@@ -202,7 +201,7 @@ def aes_decrypt_block(ciphertext, key):
     inv_shift_rows(state)
     inv_sub_bytes(state)
     add_round_key(state, round_keys[0])
-    return [byte for row in state for byte in row]
+    return convert_to_row_major(state)
 
 def format_expanded_key(round_keys):
     """З'єднює всі ключі раунду в один безперервний шістнадцятковий рядок. (розширений ключ як в CryptoTool)"""
@@ -217,14 +216,32 @@ def format_expanded_key_blocks(round_keys, block_size=8):
     expanded_hex = ''.join(f'{byte:02x}' for key in round_keys for row in key for byte in row)
     return ' '.join(expanded_hex[i:i + block_size] for i in range(0, len(expanded_hex), block_size))
 
-# Example usage with formatted output
 
-plaintext = [0x32, 0x88, 0x31, 0xe0,0x43, 0x5a, 0x31, 0x37, 0xf6, 0x30, 0x98, 0x07, 0xa8, 0x8d, 0xa2, 0x34]
-key = [0x2b, 0x28, 0xab, 0x09, 0x7e, 0xae, 0xf7, 0xcf, 0x15, 0xd2, 0x15, 0x4f, 0x16, 0xa6, 0x88, 0x3c]
+def convert_to_column_major(state_list):
+    matrix = [[0] * 4 for _ in range(4)]
+    for i in range(4):
+        for j in range(4):
+            matrix[j][i] = state_list[i * 4 + j]
+    return matrix
 
+def convert_to_row_major(matrix):
+    state_list = []
+    for i in range(4):
+        for j in range(4):
+            state_list.append(matrix[j][i])
+    return state_list
 
+# Дані з лекції
+plaintext = [0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34]
+key_list = [0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c]
+key_matrix = convert_to_column_major(key_list)
+key = [key_matrix[i][j] for j in range(4) for i in range(4)]
+
+# Дані (стартові) з CrypTool
 #plaintext = [0x00, 0x00, 0x01, 0x01, 0x03, 0x03, 0x07, 0x07, 0x0F, 0x0F, 0x1F, 0x1F, 0x3F, 0x3F, 0x7F, 0x7F]
-#key = [0x00] * 16
+#key_list = [0x00] * 16
+#key_matrix = convert_to_column_major(key_list)
+#key = [key_matrix[i][j] for j in range(4) for i in range(4)]
 
 # Encrypt and decrypt
 ciphertext, round_keys = aes_encrypt_block(plaintext, key)
@@ -235,4 +252,7 @@ print("Вхідний текст:  ", format_hex_blocks(plaintext))
 print("Стартовий ключ:  ", format_hex_blocks(key))
 print("Розширений ключ:  ", format_expanded_key_blocks(round_keys))
 print("Зашифрований текст:  ", format_hex_blocks(ciphertext))
-print("Розшифрований текст:  ", format_hex_blocks(decrypted))
+print("Розшифрований текст:  ", format_hex_blocks(decrypted), "\n\n\n")
+
+round_keys = key_expansion(key)
+print_round_keys(round_keys)
