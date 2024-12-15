@@ -21,4 +21,5 @@
 
 ## Скріншот виконання програми
 
-![image](https://github.com/user-attachments/assets/4dcfe508-4721-4def-a815-64792e0ad201)
+![image](https://github.com/user-attachments/assets/527f6e07-7470-4bd9-b6f3-018f6fc2dbb2)
+
